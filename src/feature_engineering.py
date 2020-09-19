@@ -2,19 +2,19 @@ import re
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table
 
-key_file_path = 'sql_credentials'
-keys = []
-with open(key_file_path) as file:
-    keys = file.read().splitlines()
 
-sql_username = keys[0]
-sql_password = keys[1]
-ip = keys[2]
+def find_poi(dataframe, column):
+    # Find the point-of-interest in the column
+    pattern = r"(\w*(?<=(gatan))\s\d+|\w*(?<=(vägen))\s\d+|\w*(?<=(vägen))|\w*(?<=(gatan)))"
 
-# Setup sqlengine and define table to write
-engine_path = 'mssql+pyodbc://' + sql_username + ':' + sql_password + '@' + ip + '\\SQLEXPRESS/' + 'polisen' + '?driver=SQL+Server'
-engine = create_engine(engine_path)
-con = engine.connect()
+    for row in dataframe[column]:
+        try:
+            (re.search(pattern, row.value)).group(0).isalpha()
+            return (re.search(pattern, row.value)).group(0)
+        except AttributeError:
+            return "None"
+
+    return True
 
 # Get table content
 df = pd.read_sql("SELECT * FROM polisen_oltp;", con)
