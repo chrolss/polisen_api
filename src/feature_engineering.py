@@ -1,6 +1,20 @@
 import re
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table
+import datetime
+
+
+def weekday(fulldate):
+    day_dict = {
+        0: 'Måndag',
+        1: 'Tisdag',
+        2: 'Onsdag',
+        3: 'Torsdag',
+        4: 'Fredag',
+        5: 'Lördag',
+        6: 'Söndag'
+    }
+    return day_dict[datetime.datetime.weekday(fulldate)]
 
 
 def find_poi(dataframe, column):
@@ -16,18 +30,17 @@ def find_poi(dataframe, column):
 
     return True
 
-# Get table content
-df = pd.read_sql("SELECT * FROM polisen_oltp;", con)
 
-# Do some regex magic
-pattern = r"(\w*(?<=(gatan))\s\d+|\w*(?<=(vägen))\s\d+|\w*(?<=(vägen))|\w*(?<=(gatan)))"
-
-def get_street(r, textinput):
+def get_street(textinput):
+    # Do some regex magic
+    pattern = r"(\w*(?<=(gatan))\s\d+|\w*(?<=(vägen))\s\d+|\w*(?<=(vägen))|\w*(?<=(gatan)))"
     try:
-        (re.search(r, textinput)).group(0).isalpha()
-        return (re.search(r, textinput)).group(0)
+        (re.search(pattern, textinput)).group(0).isalpha()
+        return (re.search(pattern, textinput)).group(0)
     except AttributeError:
         return "None"
 
 
-df['street'] = df.summary.apply(lambda x: get_street(pattern, x))
+def create_street_column(df):
+    df['street'] = df.summary.apply(lambda x: get_street(x))
+    return df

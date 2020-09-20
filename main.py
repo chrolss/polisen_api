@@ -13,8 +13,9 @@ psql = postgresql('polisen', 'credentials/sql_credentials')
 engine = psql.create_connection()
 
 # Work through the dates and pull the events based on the latest in the SQL server
-sql_response = engine.execute('SELECT MAX(datetime) FROM polisen_oltp').fetchall()
-working_date = datetime.datetime.strptime(sql_response[0][0], '%Y-%m-%d %H:%M:%S %z') + datetime.timedelta(days=1)
+#sql_response = engine.execute('SELECT MAX(datetime) FROM polisen_oltp').fetchall()
+#working_date = datetime.datetime.strptime(sql_response[0][0], '%Y-%m-%d %H:%M:%S %z') + datetime.timedelta(days=1)
+working_date = datetime.datetime.strptime('2020-04-01', '%Y-%m-%d')
 
 while working_date.date() < datetime.datetime.now().date():
     # Fetch the events for a specific date, insert into SQL database, and then wait 2 secs to not overload the API
