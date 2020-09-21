@@ -13,11 +13,13 @@ psql = postgresql('polisen', 'credentials/sql_credentials')
 engine = psql.create_connection()
 
 # Work through the dates and pull the events based on the latest in the SQL server
-#sql_response = engine.execute('SELECT MAX(datetime) FROM polisen_oltp').fetchall()
-#working_date = datetime.datetime.strptime(sql_response[0][0], '%Y-%m-%d %H:%M:%S %z') + datetime.timedelta(days=1)
-working_date = datetime.datetime.strptime('2020-04-01', '%Y-%m-%d')
+sql_response = engine.execute('SELECT MAX(datetime) FROM polisen_oltp').fetchall()
+working_date = datetime.datetime.strptime(sql_response[0][0], '%Y-%m-%d %H:%M:%S %z') + datetime.timedelta(days=1)
+#working_date = datetime.datetime.strptime('2020-04-01', '%Y-%m-%d')
 
+work = False # To see if we did work
 while working_date.date() < datetime.datetime.now().date():
+    work = True
     # Fetch the events for a specific date, insert into SQL database, and then wait 2 secs to not overload the API
     temp_data = api.get_date_events(working_date.strftime('%Y-%m-%d'))
     _ = response_to_sql(json_list=temp_data, engine=engine, table='polisen_oltp')
@@ -25,4 +27,7 @@ while working_date.date() < datetime.datetime.now().date():
     time.sleep(2)
     working_date = working_date + datetime.timedelta(days=1)
 
-print("Done with the work")
+if work:
+    print("Done with the work")
+else:
+    print("No new data to download")
