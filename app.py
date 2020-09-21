@@ -29,6 +29,13 @@ app.layout = html.Div(children=[
         Dash: A web application framework for Python.
     '''),
 
+    html.Label('Multi-Select Dropdown'),
+    dcc.Dropdown(
+        options=[{'label': value, 'value': value} for value in df.type.unique().tolist()],
+        value=['Rån väpnat'],
+        multi=True
+    ),
+
     dcc.Graph(
         id='example-graph',
         figure=fig
