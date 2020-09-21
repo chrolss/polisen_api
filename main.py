@@ -9,7 +9,7 @@ import time
 api = PolisenAPI()
 
 # Setup database connection
-psql = postgresql('polisen', 'credentials/sql_credentials')
+psql = postgresql('polisen', '/home/tfidf/PycharmProjects/polisen_api/credentials/sql_credentials')
 engine = psql.create_connection()
 
 # Work through the dates and pull the events based on the latest in the SQL server
