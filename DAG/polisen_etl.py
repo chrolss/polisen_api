@@ -1,17 +1,19 @@
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
+from airflow.utils.dates import days_ago
 from datetime import datetime, timedelta
 
 default_args = {
     'owner': 'chrolss',
     'depends_on_past': False,
-    'start_date': datetime(2020, 8, 7),
+    'start_date': days_ago(2),
     'retries': 2,
     'retry_delay': timedelta(minutes=60)
 }
-dag = DAG(dag_id='download_data',
+dag = DAG(dag_id='polisen_etl',
           default_args=default_args,
+          description='ETL workflow for polisen API',
           schedule_interval='0 6 * * *')
 
 startTask = DummyOperator(
