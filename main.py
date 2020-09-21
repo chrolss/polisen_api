@@ -4,11 +4,13 @@ from src.postgresql import postgresql
 import pandas as pd
 import datetime
 import time
+import os
 
 # Initialize the Polisen API
 api = PolisenAPI()
 
 # Setup database connection
+filepath_credentials = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credentials/sql_credentials')
 psql = postgresql('polisen', '/home/tfidf/PycharmProjects/polisen_api/credentials/sql_credentials')
 engine = psql.create_connection()
 
