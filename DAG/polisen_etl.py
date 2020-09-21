@@ -23,12 +23,14 @@ startTask = DummyOperator(
 
 downloadTask = BashOperator(
     task_id='Download',
-    bash_command='python3 ~/PycharmProjects/polisen_api/main.py'
+    bash_command='python3 ~/PycharmProjects/polisen_api/main.py',
+    dag=dag
 )
 
 etlTask = BashOperator(
     task_id='Transform',
-    bash_command='python3 ~/PycharmProjects/polisen_api/data_model.py'
+    bash_command='python3 ~/PycharmProjects/polisen_api/data_model.py',
+    dag=dag
 )
 
 startTask >> downloadTask >> etlTask
