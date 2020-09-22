@@ -11,7 +11,8 @@ api = PolisenAPI()
 
 # Setup database connection
 filepath_credentials = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credentials/sql_credentials')
-psql = postgresql('polisen', '/home/tfidf/PycharmProjects/polisen_api/credentials/sql_credentials')
+#psql = postgresql('polisen', 'credentials/sql_credentials')
+psql = postgresql('polisen', filepath_credentials)
 engine = psql.create_connection()
 
 # Work through the dates and pull the events based on the latest in the SQL server

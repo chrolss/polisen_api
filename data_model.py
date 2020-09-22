@@ -1,9 +1,12 @@
 from src.postgresql import postgresql
 import pandas as pd
 from src.feature_engineering import weekday
+import os
 
 # Setup database connection
-psql = postgresql('polisen', '/home/tfidf/PycharmProjects/polisen_api/credentials/sql_credentials')
+filepath_credentials = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credentials/sql_credentials')
+#psql = postgresql('polisen', 'credentials/sql_credentials')
+psql = postgresql('polisen', filepath_credentials)
 engine = psql.create_connection()
 
 # Query the db: select records that are not appearing in fact_polisen
