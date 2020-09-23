@@ -27,6 +27,14 @@ df['cc'] = 1
 dimres = engine.execute('SELECT * FROM dim_crime')
 dimcrime = pd.DataFrame(data=dimres.fetchall(), columns=dimres.keys())
 
+# Rolling average dataframe
+bomb = df[df['category'] == 'Inbrott']
+bomb.index = bomb.datetime
+bomb = bomb.resample('1D').sum().fillna(0)
+bomb.rolling('7D')['cc'].mean().plot()
+bomb.iloc[-8:-1] #last 7 days
+bomb.iloc[-14:-7] #previous 7 day period
+
 # Dash app
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_stylesheets = ['https://raw.githubusercontent.com/plotly/dash-app-stylesheets/master/dash-analytics-report.css']
