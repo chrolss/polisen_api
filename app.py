@@ -1,3 +1,4 @@
+# -*- coding: latin-1 -*-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -5,12 +6,12 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 from src.postgresql import postgresql
+import datetime
 import os
+import dash_daq as daq
 
 
 # Get data
-#filepath_credentials = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credentials/sql_credentials')
-#psql = postgresql('polisen', filepath_credentials)
 psql = postgresql('polisen', 'credentials/sql_credentials')
 engine = psql.create_connection()
 res = engine.execute("""
@@ -24,20 +25,12 @@ datetime
 """)
 df = pd.DataFrame(data=res.fetchall(), columns=res.keys())
 df['cc'] = 1
+df['week'] = df['datetime'].apply(lambda x: x.isocalendar()[1])  # Gets the week number
 dimres = engine.execute('SELECT * FROM dim_crime')
 dimcrime = pd.DataFrame(data=dimres.fetchall(), columns=dimres.keys())
 
-# Rolling average dataframe
-bomb = df[df['category'] == 'Inbrott']
-bomb.index = bomb.datetime
-bomb = bomb.resample('1D').sum().fillna(0)
-bomb.rolling('7D')['cc'].mean().plot()
-bomb.iloc[-8:-1] #last 7 days
-bomb.iloc[-14:-7] #previous 7 day period
-
 # Dash app
-#external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-external_stylesheets = ['https://raw.githubusercontent.com/plotly/dash-app-stylesheets/master/dash-analytics-report.css']
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # assume you have a "long-form" data frame
@@ -54,7 +47,7 @@ app.layout = html.Div(children=[
     dcc.Dropdown(
         id='type-dropdown',
         options=[{'label': value, 'value': value} for value in df.sort_values('type')['type'].unique().tolist()],
-        value=['RÃ¥n vÃ¤pnat'],
+        value=['Rån väpnat'],
         multi=False
     ),
     html.Label('Category Select'),
@@ -67,23 +60,55 @@ app.layout = html.Div(children=[
 
     dcc.Graph(
         id='event-timeline'
+    ),
+    daq.Indicator(
+        id='kpi-indicator',
+        label="Red",
+        color="red",
+        value=True
     )
 ])
 
 
 # Implement callback
 @app.callback(
+    dash.dependencies.Output('type-dropdown', 'options'),
+    [dash.dependencies.Input('category-dropdown', 'value')]
+)
+def update_date_dropdown(name):
+    return [{'label': i, 'value': i} for i in dimcrime[dimcrime['category'] == name].sort_values('type')['type'].tolist()]
+
+
+@app.callback(
     Output('event-timeline', 'figure'),
     [Input('category-dropdown', 'value')])
 def update_figure(selected_category):
-    print(selected_category)
+    #print(selected_category)
     filtered_df = df[df.category == selected_category]
-    fig = px.histogram(filtered_df, x="date", color="type", histfunc="count", nbins=df.date.nunique())
-
+    # fig = px.histogram(filtered_df, x="date", color="type", histfunc="count", nbins=df.date.nunique())
+    fig = px.histogram(filtered_df, x="week", color="type", histfunc="count", nbins=df.week.nunique())
     fig.update_layout(transition_duration=500)
 
     return fig
 
+
+@app.callback(
+    Output('kpi-indicator', 'label'),
+    [Input('category-dropdown', 'value')]
+)
+def update_kpi(selected_category):
+    temp_df = df[df['category'] == selected_category]
+    temp_df.index = temp_df.datetime
+    temp_df = temp_df.resample('1D').sum().fillna(0)
+    temp_df.rolling('7D')['cc'].mean().plot()
+    current_week = temp_df.iloc[-8:-1]['cc'].sum() / 7  # last 7 days
+    previous_week = temp_df.iloc[-14:-7]['cc'].sum() / 7  # previous 7 day period
+    if current_week > previous_week:
+        diff = (- 1 + (float(current_week) / float(previous_week))) * 100.0
+    else:
+        diff = (1 - (float(current_week) / float(previous_week))) * 100.0
+    print(diff)
+    return "{:.2f}".format(diff)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
