@@ -6,10 +6,7 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 from src.postgresql import postgresql
-import datetime
-import os
 import dash_daq as daq
-
 
 # Get data
 psql = postgresql('polisen', 'credentials/sql_credentials')
@@ -53,7 +50,8 @@ app.layout = html.Div(children=[
     html.Label('Category Select'),
     dcc.Dropdown(
         id='category-dropdown',
-        options=[{'label': value, 'value': value} for value in dimcrime.sort_values('category')['category'].unique().tolist()],
+        options=[{'label': value, 'value': value} for value in
+                 dimcrime.sort_values('category')['category'].unique().tolist()],
         value='Bomb',
         multi=False
     ),
@@ -76,15 +74,23 @@ app.layout = html.Div(children=[
     [dash.dependencies.Input('category-dropdown', 'value')]
 )
 def update_date_dropdown(name):
-    return [{'label': i, 'value': i} for i in dimcrime[dimcrime['category'] == name].sort_values('type')['type'].tolist()]
+    return [{'label': i, 'value': i} for i in dimcrime[dimcrime['category'] == name]
+            .sort_values('type')['type'].tolist()]
 
 
 @app.callback(
     Output('event-timeline', 'figure'),
-    [Input('category-dropdown', 'value')])
-def update_figure(selected_category):
-    #print(selected_category)
-    filtered_df = df[df.category == selected_category]
+    [Input('category-dropdown', 'value'),
+     Input('type-dropdown', 'value')])
+def update_figure_filter_category(selected_category, selected_type):
+    ctx = dash.callback_context
+    print(ctx.triggered[0]['prop_id'])
+    if ctx.triggered[0]['prop_id'] == 'category-dropdown.value':
+        filtered_df = df[df.category == selected_category]
+    elif ctx.triggered[0]['prop_id'] == 'type-dropdown.value':
+        filtered_df = df[df.type == selected_type]
+    else:
+        filtered_df = df[df.category == 'Bomb']
     # fig = px.histogram(filtered_df, x="date", color="type", histfunc="count", nbins=df.date.nunique())
     fig = px.histogram(filtered_df, x="week", color="type", histfunc="count", nbins=df.week.nunique())
     fig.update_layout(transition_duration=500)
@@ -106,9 +112,10 @@ def update_kpi(selected_category):
     if current_week > previous_week:
         diff = (- 1 + (float(current_week) / float(previous_week))) * 100.0
     else:
-        diff = (1 - (float(current_week) / float(previous_week))) * 100.0
+        diff = ((float(current_week) / float(previous_week)) - 1) * 100.0
     print(diff)
     return "{:.2f}".format(diff)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
